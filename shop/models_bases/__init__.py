@@ -156,7 +156,6 @@ class BaseCart(models.Model):
         else:
             cart_item = CartItem.objects.create(
                 cart=self, quantity=quantity, product=product)
-            cart_item.save()
 
         return cart_item
 
