@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 import json
-from django.core.exceptions import ValidationError
+
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseBadRequest
+from django.db import transaction
+from django.http import (Http404, HttpResponse, HttpResponseBadRequest,
+                         HttpResponseRedirect)
 from django.shortcuts import redirect
-from django.core.exceptions import ObjectDoesNotExist
 
 from shop.forms import get_cart_item_formset
+from shop.models.cartmodel import Cart
 from shop.models.productmodel import Product
 from shop.util.cart import get_or_create_cart
-from shop.views import ShopView, ShopTemplateResponseMixin
+from shop.views import ShopTemplateResponseMixin, ShopView
 
 
 class CartItemDetail(ShopView):
@@ -68,14 +71,17 @@ class CartItemDetail(ShopView):
 
         http://example.com/shop/cart/item/12345
         """
-        cart_object = get_or_create_cart(self.request)
-        item_id = self.kwargs.get('id')
-        try:
-            cart_object.delete_item(item_id)
-            return self.delete_success()
-        except ObjectDoesNotExist:
-            # don't care if it is already gone
-            return self.delete_success()
+        with transaction.atomic():
+            cart_object = get_or_create_cart(self.request)
+            Cart.objects.select_for_update().get(pk=cart_object.pk)
+
+            item_id = self.kwargs.get('id')
+            try:
+                cart_object.delete_item(item_id)
+                return self.delete_success()
+            except ObjectDoesNotExist:
+                # don't care if it is already gone
+                return self.delete_success()
 
     # success hooks
     def success(self, cart_object=None):
