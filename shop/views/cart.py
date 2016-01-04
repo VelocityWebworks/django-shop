@@ -73,10 +73,10 @@ class CartItemDetail(ShopView):
         """
         with transaction.atomic():
             cart_object = get_or_create_cart(self.request)
-            Cart.objects.select_for_update().get(pk=cart_object.pk)
 
             item_id = self.kwargs.get('id')
             try:
+                Cart.objects.select_for_update().get(pk=cart_object.pk)
                 cart_object.delete_item(item_id)
                 return self.delete_success()
             except ObjectDoesNotExist:
