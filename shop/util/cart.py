@@ -47,7 +47,7 @@ def get_or_create_cart(request, save=False):
         if is_logged_in:
             # if we are authenticated
             session_cart = get_cart_from_session(request)
-            if session_cart and session_cart.user == request.user:
+            if session_cart and session_cart.user_id == request.user.id:
                 # and the session cart already belongs to us, we are done
                 cart = session_cart
             elif session_cart and not session_cart.is_empty and session_cart.user != request.user:
