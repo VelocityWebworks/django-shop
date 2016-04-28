@@ -26,7 +26,7 @@ class Country(models.Model):
     name = models.CharField(max_length=255)
 
     def __unicode__(self):
-        return u'%s' % self.name
+        return '%s' % self.name
 
     class Meta(object):
         verbose_name = _('Country')

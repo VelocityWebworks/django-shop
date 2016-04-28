@@ -138,7 +138,7 @@ class MockCartModifierWithNothing(BaseCartModifier):
 
 class MockCartModifierWithSimpleString(BaseCartModifier):
     stdstr = 'plain ASCII'
-    unicodestr = u'unicode ÄÖÜäöüáàéèêóòñ'
+    unicodestr = 'unicode ÄÖÜäöüáàéèêóòñ'
 
     def get_extra_cart_price_field(self, cart, request):
         return ('Total', Decimal(10), str(self.stdstr))
