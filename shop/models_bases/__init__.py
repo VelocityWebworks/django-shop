@@ -303,7 +303,7 @@ class BaseCartItem(models.Model):
 
     def update(self, request):
         self.extra_price_fields = []  # Reset the price fields
-        self.line_subtotal = self.product.get_price() * self.quantity
+        self.line_subtotal = self.product.get_price(request) * self.quantity
         self.current_total = self.line_subtotal
 
         for modifier in cart_modifiers_pool.get_modifiers_list():

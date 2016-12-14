@@ -5,12 +5,14 @@ from ..order_signals import fetching
 
 
 def get_cart_from_database(request):
+    qs = []
     filters = dict(user=request.user)
     fetching.send(
         sender="get_cart_from_database",
         request=request,
-        filters=filters)
-    database_cart = Cart.objects.filter(**filters)
+        filters=filters,
+        qs=qs)
+    database_cart = Cart.objects.filter(*qs, **filters)
     if database_cart:
         database_cart = database_cart[0]
     else:
