@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from decimal import Decimal
 from datetime import date
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.template import RequestContext
 from django.utils.translation import ugettext_lazy as _
 from django.shortcuts import render_to_response
@@ -20,9 +20,9 @@ class ForwardFundBackend(object):
         self.shop = shop
 
     def get_urls(self):
-        urlpatterns = patterns('',
+        urlpatterns = [
             url(r'^$', self.advance_payment_view, name='advance-payment'),
-        )
+        ]
         return urlpatterns
 
     @on_method(order_required)

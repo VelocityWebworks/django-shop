@@ -35,7 +35,7 @@ class PayOnDeliveryBackend(object):
         return HttpResponseRedirect(self.shop.get_finished_url())
 
     def get_urls(self):
-        urlpatterns = patterns('',
+        urlpatterns = [
             url(r'^$', self.simple_view, name='pay-on-delivery'),
-        )
+        ]
         return urlpatterns

@@ -1,12 +1,16 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from shop.views.order import OrderListView, OrderDetailView
 
-urlpatterns = patterns('',
-    url(r'^$',
+urlpatterns = [
+    url(
+        r'^$',
         OrderListView.as_view(),
-        name='order_list'),
-    url(r'^(?P<pk>\d+)/$',
+        name='order_list'
+    ),
+    url(
+        r'^(?P<pk>\d+)/$',
         OrderDetailView.as_view(),
-        name='order_detail'),
-    )
+        name='order_detail'
+    ),
+]
 

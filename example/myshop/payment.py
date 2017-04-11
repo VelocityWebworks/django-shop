@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.http import HttpResponseRedirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -37,8 +37,8 @@ class ExamplePayment(object):
         return HttpResponseRedirect(self.shop.get_finished_url())
 
     def get_urls(self):
-        urlpatterns = patterns('',
+        urlpatterns = [
             url(r'^$', self.show_payment, name='example-payment'),
             url(r'^$', self.process_payment, name='process-payment'),
-        )
+        ]
         return urlpatterns
