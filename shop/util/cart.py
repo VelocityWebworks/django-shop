@@ -1,7 +1,16 @@
 # -*- coding: utf-8 -*-
-from shop.models.cartmodel import Cart
+import logging
+
 from django.contrib.auth.models import AnonymousUser
 from ..order_signals import fetching
+
+
+from shop.models.cartmodel import Cart
+
+from ..order_signals import fetching
+
+
+debug = logging.getLogger("debug")
 
 
 def get_cart_from_database(request):
@@ -19,6 +28,7 @@ def get_cart_from_database(request):
         database_cart = None
     return database_cart
 
+
 def get_cart_from_session(request):
     session_cart = None
     session = getattr(request, 'session', None)
@@ -30,6 +40,7 @@ def get_cart_from_session(request):
             except Cart.DoesNotExist:
                 session_cart = None
     return session_cart
+
 
 def get_or_create_cart(request, save=False):
     """
@@ -53,8 +64,20 @@ def get_or_create_cart(request, save=False):
                 # and the session cart already belongs to us, we are done
                 cart = session_cart
             elif session_cart and not session_cart.is_empty and session_cart.user != request.user:
+
                 # if it does not belong to us yet
                 database_cart = get_cart_from_database(request)
+
+                debug.error("cart user problem", extra=dict(
+                    request=request,
+                    cart_id=session_cart.id,
+                    database_cart_id=database_cart.id,
+                    user=request.user,
+                    olduser=session_cart.user,
+                    session_cart=session_cart,
+                    database_cart=database_cart,
+                ))
+
                 if database_cart:
                     # and there already is a cart that belongs to us in the database
                     # delete the old database cart
