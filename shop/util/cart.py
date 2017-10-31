@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 import logging
+import traceback
 
 from django.contrib.auth.models import AnonymousUser
-from ..order_signals import fetching
-
 
 from shop.models.cartmodel import Cart
 
 from ..order_signals import fetching
-
 
 debug = logging.getLogger("debug")
 
@@ -68,15 +66,15 @@ def get_or_create_cart(request, save=False):
                 # if it does not belong to us yet
                 database_cart = get_cart_from_database(request)
 
-                debug.error("cart user problem", extra=dict(
-                    request=request,
-                    cart_id=session_cart.id,
-                    database_cart_id=database_cart and database_cart.id,
-                    user=request.user,
-                    olduser=session_cart.user,
-                    session_cart=session_cart,
-                    database_cart=database_cart,
-                ))
+                if session_cart.user:
+                    debug.error("cart user problem", extra=dict(
+                        request=request,
+                        user=request.user,
+                        olduser=session_cart.user,
+                        session_cart=session_cart,
+                        database_cart=database_cart,
+                        trace=traceback.format_stack()
+                    ))
 
                 if database_cart:
                     # and there already is a cart that belongs to us in the database
