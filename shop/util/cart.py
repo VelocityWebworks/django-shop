@@ -76,14 +76,20 @@ def get_or_create_cart(request, save=False):
                         trace=traceback.format_stack()
                     ))
 
-                if database_cart:
-                    # and there already is a cart that belongs to us in the database
-                    # delete the old database cart
-                    database_cart.delete()
-                # save the user to the new one from the session
-                session_cart.user = request.user
-                session_cart.save()
-                cart = session_cart
+                    if database_cart:
+                        # and save it to the session
+                        request.session['cart_id'] = database_cart.pk
+                        cart = database_cart
+                else:
+                    # if database_cart:
+                    #     # and there already is a cart that belongs to us in the database
+                    #     # delete the old database cart
+                    #     database_cart.delete()
+
+                    # save the user to the new one from the session
+                    session_cart.user = request.user
+                    session_cart.save()
+                    cart = session_cart
             else:
                 # if there is no session_cart, or it's empty, use the database cart
                 cart = get_cart_from_database(request)
