@@ -351,7 +351,7 @@ class BaseOrder(models.Model):
     user = models.ForeignKey(USER_MODEL, blank=True, null=True,
             verbose_name=_('User'))
     status = models.IntegerField(choices=STATUS_CODES, default=PROCESSING,
-            verbose_name=_('Status'))
+            verbose_name=_('Status'), db_index=True)
     order_subtotal = CurrencyField(verbose_name=_('Order subtotal'))
     order_total = CurrencyField(verbose_name=_('Order Total'))
     shipping_address_text = models.TextField(_('Shipping address'), blank=True,
@@ -359,7 +359,7 @@ class BaseOrder(models.Model):
     billing_address_text = models.TextField(_('Billing address'), blank=True,
         null=True)
     created = models.DateTimeField(auto_now_add=True,
-            verbose_name=_('Created'))
+            verbose_name=_('Created'), db_index=True)
     modified = models.DateTimeField(auto_now=True,
             verbose_name=_('Updated'))
     cart_pk = models.PositiveIntegerField(_('Cart primary key'), blank=True, null=True)
