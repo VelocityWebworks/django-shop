@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
-from django.conf import settings
 from decimal import Decimal
 from distutils.version import LooseVersion
-from django.core.urlresolvers import reverse
+
+import django
+from django.conf import settings
 from django.db import models
 from django.db.models.aggregates import Sum
+from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from polymorphic.models import PolymorphicModel
+
 from shop.cart.modifiers_pool import cart_modifiers_pool
 from shop.util.fields import CurrencyField
 from shop.util.loader import get_model_string
-import django
 
 USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
+
 
 #==============================================================================
 # Product
@@ -80,7 +83,7 @@ class BaseCart(models.Model):
     people buy from our shop without having to register with us.
     """
     # If the user is null, that means this is used for a session
-    user = models.ForeignKey(USER_MODEL, null=True, blank=True)
+    user = models.ForeignKey(USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -278,11 +281,11 @@ class BaseCartItem(models.Model):
     This is a holder for the quantity of items in the cart and, obviously, a
     pointer to the actual Product being purchased :)
     """
-    cart = models.ForeignKey(get_model_string('Cart'), related_name="items")
+    cart = models.ForeignKey(get_model_string('Cart'), related_name="items", on_delete=models.CASCADE)
 
     quantity = models.IntegerField()
 
-    product = models.ForeignKey(get_model_string('Product'))
+    product = models.ForeignKey(get_model_string('Product'), on_delete=models.CASCADE)
 
     class Meta(object):
         abstract = True
@@ -348,20 +351,14 @@ class BaseOrder(models.Model):
     )
 
     # If the user is null, the order was created with a session
-    user = models.ForeignKey(USER_MODEL, blank=True, null=True,
-            verbose_name=_('User'))
-    status = models.IntegerField(choices=STATUS_CODES, default=PROCESSING,
-            verbose_name=_('Status'), db_index=True)
+    user = models.ForeignKey(USER_MODEL, blank=True, null=True, verbose_name=_('User'), on_delete=models.CASCADE)
+    status = models.IntegerField(choices=STATUS_CODES, default=PROCESSING, verbose_name=_('Status'), db_index=True)
     order_subtotal = CurrencyField(verbose_name=_('Order subtotal'))
     order_total = CurrencyField(verbose_name=_('Order Total'))
-    shipping_address_text = models.TextField(_('Shipping address'), blank=True,
-        null=True)
-    billing_address_text = models.TextField(_('Billing address'), blank=True,
-        null=True)
-    created = models.DateTimeField(auto_now_add=True,
-            verbose_name=_('Created'), db_index=True)
-    modified = models.DateTimeField(auto_now=True,
-            verbose_name=_('Updated'))
+    shipping_address_text = models.TextField(_('Shipping address'), blank=True, null=True)
+    billing_address_text = models.TextField(_('Billing address'), blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True, verbose_name=_('Created'), db_index=True)
+    modified = models.DateTimeField(auto_now=True, verbose_name=_('Updated'))
     cart_pk = models.PositiveIntegerField(_('Cart primary key'), blank=True, null=True)
 
     class Meta(object):
@@ -456,14 +453,10 @@ class BaseOrderItem(models.Model):
     A line Item for an order.
     """
 
-    order = models.ForeignKey(get_model_string('Order'), related_name='items',
-            verbose_name=_('Order'))
-    product_reference = models.CharField(max_length=255,
-            verbose_name=_('Product reference'))
-    product_name = models.CharField(max_length=255, null=True, blank=True,
-            verbose_name=_('Product name'))
-    product = models.ForeignKey(get_model_string('Product'),
-        verbose_name=_('Product'), null=True, blank=True, **f_kwargs)
+    order = models.ForeignKey(get_model_string('Order'), related_name='items', verbose_name=_('Order'), on_delete=models.CASCADE)
+    product_reference = models.CharField(max_length=255, verbose_name=_('Product reference'))
+    product_name = models.CharField(max_length=255, null=True, blank=True, verbose_name=_('Product name'))
+    product = models.ForeignKey(get_model_string('Product'), verbose_name=_('Product'), null=True, blank=True, **f_kwargs)
     unit_price = CurrencyField(verbose_name=_('Unit price'))
     quantity = models.IntegerField(verbose_name=_('Quantity'))
     line_subtotal = CurrencyField(verbose_name=_('Line subtotal'))
