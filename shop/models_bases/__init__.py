@@ -335,6 +335,7 @@ class BaseOrder(models.Model):
     CONFIRMING = 20  # The order is pending confirmation (user is on the confirm view)
     CONFIRMED = 30  # The order was confirmed (user is in the payment backend)
     COMPLETED = 40  # Payment backend successfully completed
+    FULFILLING = 70 # the order is being created
     SHIPPED = 50  # The order was shipped to client
     CANCELED = 60  # The order was canceled
     CANCELLED = CANCELED  # DEPRECATED SPELLING
@@ -346,6 +347,7 @@ class BaseOrder(models.Model):
         (CONFIRMING, _('Confirming')),
         (CONFIRMED, _('Confirmed')),
         (COMPLETED, _('Completed')),
+        (FULFILLING, _('Fulfilling')),
         (SHIPPED, _('Shipped')),
         (CANCELED, _('Canceled')),
     )
