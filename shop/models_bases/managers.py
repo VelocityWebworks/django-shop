@@ -2,7 +2,7 @@
 from django.contrib.auth.models import AnonymousUser
 from django.db import models
 from django.db.models.aggregates import Count
-from polymorphic.manager import PolymorphicManager
+from polymorphic.managers import PolymorphicManager
 
 from shop.order_signals import processing
 from shop.util.compat.db import atomic
