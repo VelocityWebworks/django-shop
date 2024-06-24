@@ -1,14 +1,31 @@
 # -*- coding: utf-8 -*-
-from shop.models.cartmodel import Cart
+import logging
+import traceback
+
 from django.contrib.auth.models import AnonymousUser
 
+from shop.models.cartmodel import Cart
+
+from ..order_signals import fetching
+
+debug = logging.getLogger("debug")
+
+
 def get_cart_from_database(request):
-    database_cart = Cart.objects.filter(user=request.user)
+    qs = []
+    filters = dict(user=request.user)
+    fetching.send(
+        sender="get_cart_from_database",
+        request=request,
+        filters=filters,
+        qs=qs)
+    database_cart = Cart.objects.filter(*qs, **filters)
     if database_cart:
         database_cart = database_cart[0]
     else:
         database_cart = None
     return database_cart
+
 
 def get_cart_from_session(request):
     session_cart = None
@@ -21,6 +38,7 @@ def get_cart_from_session(request):
             except Cart.DoesNotExist:
                 session_cart = None
     return session_cart
+
 
 def get_or_create_cart(request, save=False):
     """
@@ -40,20 +58,38 @@ def get_or_create_cart(request, save=False):
         if is_logged_in:
             # if we are authenticated
             session_cart = get_cart_from_session(request)
-            if session_cart and session_cart.user == request.user:
+            if session_cart and session_cart.user_id == request.user.id:
                 # and the session cart already belongs to us, we are done
                 cart = session_cart
             elif session_cart and not session_cart.is_empty and session_cart.user != request.user:
+
                 # if it does not belong to us yet
                 database_cart = get_cart_from_database(request)
-                if database_cart:
-                    # and there already is a cart that belongs to us in the database
-                    # delete the old database cart
-                    database_cart.delete()
-                # save the user to the new one from the session
-                session_cart.user = request.user
-                session_cart.save()
-                cart = session_cart
+
+                if session_cart.user:
+                    if database_cart:
+                        debug.error("cart user problem", extra=dict(
+                            request=request,
+                            user=request.user,
+                            olduser=session_cart.user,
+                            session_cart=session_cart,
+                            database_cart=database_cart,
+                            trace=traceback.format_stack()
+                        ))
+
+                        # and save it to the session
+                        request.session['cart_id'] = database_cart.pk
+                        cart = database_cart
+                else:
+                    if database_cart:
+                        # and there already is a cart that belongs to us
+                        # delete the old database cart
+                        database_cart.delete()
+
+                    # save the user to the new one from the session
+                    session_cart.user = request.user
+                    session_cart.save()
+                    cart = session_cart
             else:
                 # if there is no session_cart, or it's empty, use the database cart
                 cart = get_cart_from_database(request)

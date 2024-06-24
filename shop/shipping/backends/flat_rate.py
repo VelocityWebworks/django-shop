@@ -2,7 +2,7 @@
 from decimal import Decimal
 
 from django.conf import settings
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext_lazy as _
@@ -58,8 +58,8 @@ class FlatRateShipping(object):
         """
         Return the list of URLs defined here.
         """
-        urlpatterns = patterns('',
+        urlpatterns = [
             url(r'^$', self.view_display_fees, name='flat'),
             url(r'^process/$', self.view_process_order, name='flat_process'),
-        )
+        ]
         return urlpatterns

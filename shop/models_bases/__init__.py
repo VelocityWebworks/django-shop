@@ -1,18 +1,21 @@
 # -*- coding: utf-8 -*-
-from django.conf import settings
 from decimal import Decimal
 from distutils.version import LooseVersion
-from django.core.urlresolvers import reverse
+
+import django
+from django.conf import settings
 from django.db import models
 from django.db.models.aggregates import Sum
+from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
-from polymorphic.polymorphic_model import PolymorphicModel
+from polymorphic.models import PolymorphicModel
+
 from shop.cart.modifiers_pool import cart_modifiers_pool
 from shop.util.fields import CurrencyField
 from shop.util.loader import get_model_string
-import django
 
 USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
+
 
 #==============================================================================
 # Product
@@ -20,7 +23,7 @@ USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 class BaseProduct(PolymorphicModel):
     """
     A basic product for the shop.
-    
+
     Most of the already existing fields here should be generic enough to reside
     on the "base model" and not on an added property.
     """
@@ -74,13 +77,13 @@ class BaseProduct(PolymorphicModel):
 #==============================================================================
 class BaseCart(models.Model):
     """
-    This should be a rather simple list of items. 
-    
-    Ideally it should be bound to a session and not to a User is we want to let 
+    This should be a rather simple list of items.
+
+    Ideally it should be bound to a session and not to a User is we want to let
     people buy from our shop without having to register with us.
     """
     # If the user is null, that means this is used for a session
-    user = models.OneToOneField(USER_MODEL, null=True, blank=True)
+    user = models.ForeignKey(USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
     date_created = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -156,7 +159,6 @@ class BaseCart(models.Model):
         else:
             cart_item = CartItem.objects.create(
                 cart=self, quantity=quantity, product=product)
-            cart_item.save()
 
         return cart_item
 
@@ -176,8 +178,8 @@ class BaseCart(models.Model):
 
     def delete_item(self, cart_item_id):
         """
-        A simple convenience method to delete one of the cart's items. 
-        
+        A simple convenience method to delete one of the cart's items.
+
         This allows to implicitely check for "access rights" since we insure the
         cartitem is actually in the user's cart.
         """
@@ -198,7 +200,7 @@ class BaseCart(models.Model):
         """
         This should be called whenever anything is changed in the cart (added
         or removed).
-        
+
         It will loop on all line items in the cart, and call all the price
         modifiers on each row.
         After doing this, it will compute and update the order's total and
@@ -279,11 +281,11 @@ class BaseCartItem(models.Model):
     This is a holder for the quantity of items in the cart and, obviously, a
     pointer to the actual Product being purchased :)
     """
-    cart = models.ForeignKey(get_model_string('Cart'), related_name="items")
+    cart = models.ForeignKey(get_model_string('Cart'), related_name="items", on_delete=models.CASCADE)
 
     quantity = models.IntegerField()
 
-    product = models.ForeignKey(get_model_string('Product'))
+    product = models.ForeignKey(get_model_string('Product'), on_delete=models.CASCADE)
 
     class Meta(object):
         abstract = True
@@ -304,7 +306,7 @@ class BaseCartItem(models.Model):
 
     def update(self, request):
         self.extra_price_fields = []  # Reset the price fields
-        self.line_subtotal = self.product.get_price() * self.quantity
+        self.line_subtotal = self.product.get_price(request) * self.quantity
         self.current_total = self.line_subtotal
 
         for modifier in cart_modifiers_pool.get_modifiers_list():
@@ -333,6 +335,7 @@ class BaseOrder(models.Model):
     CONFIRMING = 20  # The order is pending confirmation (user is on the confirm view)
     CONFIRMED = 30  # The order was confirmed (user is in the payment backend)
     COMPLETED = 40  # Payment backend successfully completed
+    FULFILLING = 70 # the order is being created
     SHIPPED = 50  # The order was shipped to client
     CANCELED = 60  # The order was canceled
     CANCELLED = CANCELED  # DEPRECATED SPELLING
@@ -344,25 +347,20 @@ class BaseOrder(models.Model):
         (CONFIRMING, _('Confirming')),
         (CONFIRMED, _('Confirmed')),
         (COMPLETED, _('Completed')),
+        (FULFILLING, _('Fulfilling')),
         (SHIPPED, _('Shipped')),
         (CANCELED, _('Canceled')),
     )
 
     # If the user is null, the order was created with a session
-    user = models.ForeignKey(USER_MODEL, blank=True, null=True,
-            verbose_name=_('User'))
-    status = models.IntegerField(choices=STATUS_CODES, default=PROCESSING,
-            verbose_name=_('Status'))
+    user = models.ForeignKey(USER_MODEL, blank=True, null=True, verbose_name=_('User'), on_delete=models.CASCADE)
+    status = models.IntegerField(choices=STATUS_CODES, default=PROCESSING, verbose_name=_('Status'), db_index=True)
     order_subtotal = CurrencyField(verbose_name=_('Order subtotal'))
     order_total = CurrencyField(verbose_name=_('Order Total'))
-    shipping_address_text = models.TextField(_('Shipping address'), blank=True,
-        null=True)
-    billing_address_text = models.TextField(_('Billing address'), blank=True,
-        null=True)
-    created = models.DateTimeField(auto_now_add=True,
-            verbose_name=_('Created'))
-    modified = models.DateTimeField(auto_now=True,
-            verbose_name=_('Updated'))
+    shipping_address_text = models.TextField(_('Shipping address'), blank=True, null=True)
+    billing_address_text = models.TextField(_('Billing address'), blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True, verbose_name=_('Created'), db_index=True)
+    modified = models.DateTimeField(auto_now=True, verbose_name=_('Updated'))
     cart_pk = models.PositiveIntegerField(_('Cart primary key'), blank=True, null=True)
 
     class Meta(object):
@@ -457,14 +455,10 @@ class BaseOrderItem(models.Model):
     A line Item for an order.
     """
 
-    order = models.ForeignKey(get_model_string('Order'), related_name='items',
-            verbose_name=_('Order'))
-    product_reference = models.CharField(max_length=255,
-            verbose_name=_('Product reference'))
-    product_name = models.CharField(max_length=255, null=True, blank=True,
-            verbose_name=_('Product name'))
-    product = models.ForeignKey(get_model_string('Product'),
-        verbose_name=_('Product'), null=True, blank=True, **f_kwargs)
+    order = models.ForeignKey(get_model_string('Order'), related_name='items', verbose_name=_('Order'), on_delete=models.CASCADE)
+    product_reference = models.CharField(max_length=255, verbose_name=_('Product reference'))
+    product_name = models.CharField(max_length=255, null=True, blank=True, verbose_name=_('Product name'))
+    product = models.ForeignKey(get_model_string('Product'), verbose_name=_('Product'), null=True, blank=True, **f_kwargs)
     unit_price = CurrencyField(verbose_name=_('Unit price'))
     quantity = models.IntegerField(verbose_name=_('Quantity'))
     line_subtotal = CurrencyField(verbose_name=_('Line subtotal'))
