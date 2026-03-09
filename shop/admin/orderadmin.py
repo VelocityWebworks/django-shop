@@ -1,7 +1,7 @@
 #-*- coding: utf-8 -*-
 from django.contrib import admin
 from django.contrib.admin.options import ModelAdmin
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from shop.order_signals import completed
 from shop.admin.mixins import LocalizeDecimalFieldsMixin

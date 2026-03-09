@@ -1,13 +1,12 @@
-from django.conf.urls import patterns, include, url
+from django.urls import include, path, re_path
 from example.myshop.views import MyOrderConfirmView
 
 from shop import urls as shop_urls
 from django.contrib import admin
-admin.autodiscover()
 
 urlpatterns = [
-    (r'^admin/', include(admin.site.urls)),
+    path('admin/', admin.site.urls),
 
-    url(r'^checkout/confirm/$', MyOrderConfirmView.as_view(), name='checkout_shipping'),
-    (r'^', include(shop_urls)), # <-- That's the important bit
+    path('checkout/confirm/', MyOrderConfirmView.as_view(), name='checkout_shipping'),
+    re_path(r'^', include(shop_urls)),  # <-- That's the important bit
 ]

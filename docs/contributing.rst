@@ -18,11 +18,10 @@ The following packages are needed for the test suite to run:
 
 * `django <https://www.djangoproject.com/>`_
 * `django_polymorphic <https://github.com/chrisglass/django_polymorphic>`_
-* `django-classy-tags <https://github.com/ojii/django-classy-tags>`_
 
 Running the following command inside your virtualenv should get you started::
 
-    pip install django django_polymorphic django-classy-tags
+    pip install django django_polymorphic
 
 Running the tests
 -----------------

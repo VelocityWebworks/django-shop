@@ -1,14 +1,14 @@
-from django.conf.urls import url
+from django.urls import re_path
 from shop.views.product import (ProductListView, ProductDetailView)
 
 
 urlpatterns = [
-    url(
+    re_path(
         r'^$',
         ProductListView.as_view(),
         name='product_list'
     ),
-    url(
+    re_path(
         r'^(?P<slug>[0-9A-Za-z-_.//]+)/$',
         ProductDetailView.as_view(),
         name='product_detail'

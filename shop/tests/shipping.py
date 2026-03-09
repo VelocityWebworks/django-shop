@@ -1,9 +1,9 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from decimal import Decimal
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ImproperlyConfigured
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.test.testcases import TestCase
 
 from shop.backends_pool import backends_pool
@@ -18,6 +18,7 @@ class MockShippingBackend(object):
     """
     A simple, useless backend
     """
+
     def __init__(self, shop):
         self.shop = shop
 
@@ -33,36 +34,40 @@ class ValidMockShippingBackend(NamedMockShippingBackend):
 class GeneralShippingBackendTestCase(TestCase):
 
     def setUp(self):
-        self.user = User.objects.create(username='test',
-                                        email='test@example.com',
-                                        first_name='Test',
-                                        last_name='Toto')
+        self.user = User.objects.create(
+            username="test",
+            email="test@example.com",
+            first_name="Test",
+            last_name="Toto",
+        )
         backends_pool.use_cache = False
 
         self.order = Order()
-        self.order.order_subtotal = Decimal('10')
-        self.order.order_total = Decimal('10')
-        self.order.shipping_cost = Decimal('0')
+        self.order.order_subtotal = Decimal("10")
+        self.order.order_total = Decimal("10")
+        self.order.shipping_cost = Decimal("0")
 
-        self.order.shipping_address_text = 'shipping address example'
-        self.order.billing_address_text = 'billing address example'
+        self.order.shipping_address_text = "shipping address example"
+        self.order.billing_address_text = "billing address example"
 
         self.order.save()
 
     def test_enforcing_of_name_works(self):
-        MODIFIERS = ['shop.tests.shipping.MockShippingBackend']
+        MODIFIERS = ["shop.tests.shipping.MockShippingBackend"]
         with SettingsOverride(SHOP_SHIPPING_BACKENDS=MODIFIERS):
-            self.assertRaises(NotImplementedError,
-                backends_pool.get_shipping_backends_list)
+            self.assertRaises(
+                NotImplementedError, backends_pool.get_shipping_backends_list
+            )
 
     def test_enforcing_of_namespace_works(self):
-        MODIFIERS = ['shop.tests.shipping.NamedMockShippingBackend']
+        MODIFIERS = ["shop.tests.shipping.NamedMockShippingBackend"]
         with SettingsOverride(SHOP_SHIPPING_BACKENDS=MODIFIERS):
-            self.assertRaises(NotImplementedError,
-                backends_pool.get_shipping_backends_list)
+            self.assertRaises(
+                NotImplementedError, backends_pool.get_shipping_backends_list
+            )
 
     def test_get_order_returns_sensible_nulls(self):
-        class MockRequest():
+        class MockRequest:
             user = self.user
 
         be = ValidMockShippingBackend(shop=ShippingAPI())
@@ -70,7 +75,7 @@ class GeneralShippingBackendTestCase(TestCase):
         self.assertEqual(order, None)
 
     def test_get_backends_from_pool(self):
-        MODIFIERS = ['shop.tests.shipping.ValidMockShippingBackend']
+        MODIFIERS = ["shop.tests.shipping.ValidMockShippingBackend"]
         with SettingsOverride(SHOP_SHIPPING_BACKENDS=MODIFIERS):
             list_ = backends_pool.get_shipping_backends_list()
             self.assertEqual(len(list_), 1)
@@ -82,25 +87,28 @@ class GeneralShippingBackendTestCase(TestCase):
             self.assertEqual(len(list_), 0)
 
     def test_get_backends_from_non_path(self):
-        MODIFIERS = ['blob']
+        MODIFIERS = ["blob"]
         with SettingsOverride(SHOP_SHIPPING_BACKENDS=MODIFIERS):
-            self.assertRaises(ImproperlyConfigured,
-                backends_pool.get_shipping_backends_list)
+            self.assertRaises(
+                ImproperlyConfigured, backends_pool.get_shipping_backends_list
+            )
 
     def test_get_backends_from_non_module(self):
-        MODIFIERS = ['shop.tests.IdontExist.IdontExistEither']
+        MODIFIERS = ["shop.tests.IdontExist.IdontExistEither"]
         with SettingsOverride(SHOP_SHIPPING_BACKENDS=MODIFIERS):
-            self.assertRaises(ImproperlyConfigured,
-                backends_pool.get_shipping_backends_list)
+            self.assertRaises(
+                ImproperlyConfigured, backends_pool.get_shipping_backends_list
+            )
 
     def test_get_backends_from_non_class(self):
-        MODIFIERS = ['shop.tests.shipping.IdontExistEither']
+        MODIFIERS = ["shop.tests.shipping.IdontExistEither"]
         with SettingsOverride(SHOP_SHIPPING_BACKENDS=MODIFIERS):
-            self.assertRaises(ImproperlyConfigured,
-                backends_pool.get_shipping_backends_list)
+            self.assertRaises(
+                ImproperlyConfigured, backends_pool.get_shipping_backends_list
+            )
 
     def test_get_backends_cache_works(self):
-        MODIFIERS = ['shop.tests.shipping.ValidMockShippingBackend']
+        MODIFIERS = ["shop.tests.shipping.ValidMockShippingBackend"]
         backends_pool.use_cache = True
         with SettingsOverride(SHOP_SHIPPING_BACKENDS=MODIFIERS):
             list_ = backends_pool.get_shipping_backends_list()
@@ -113,19 +121,18 @@ class GeneralShippingBackendTestCase(TestCase):
 class ShippingApiTestCase(TestCase):
 
     def setUp(self):
-        self.user = User.objects.create(username="test",
-            email="test@example.com")
+        self.user = User.objects.create(username="test", email="test@example.com")
 
         self.request = Mock()
-        setattr(self.request, 'user', None)
+        setattr(self.request, "user", None)
 
         self.order = Order()
-        self.order.order_subtotal = Decimal('10')
-        self.order.order_total = Decimal('10')
-        self.order.shipping_cost = Decimal('0')
+        self.order.order_subtotal = Decimal("10")
+        self.order.order_total = Decimal("10")
+        self.order.shipping_cost = Decimal("0")
 
-        self.order.shipping_address_text = 'shipping address example'
-        self.order.billing_address_text = 'billing address example'
+        self.order.shipping_address_text = "shipping address example"
+        self.order.billing_address_text = "billing address example"
 
         self.order.save()
 
@@ -134,56 +141,56 @@ class ShippingApiTestCase(TestCase):
 
     def test_adding_shipping_costs_work(self):
         api = ShippingAPI()
-        api.add_shipping_costs(self.order, self.shipping_label,
-            self.shipping_value)
+        api.add_shipping_costs(self.order, self.shipping_label, self.shipping_value)
         self.assertEqual(self.order.shipping_costs, self.shipping_value)
-        self.assertEqual(self.order.order_total, (self.order.order_subtotal +
-            self.shipping_value))
+        self.assertEqual(
+            self.order.order_total, (self.order.order_subtotal + self.shipping_value)
+        )
 
     def test_adding_shipping_costs_twice_works(self):
         # That should test against #39 regressions
         api = ShippingAPI()
 
-        api.add_shipping_costs(self.order, self.shipping_label,
-            self.shipping_value)
-        api.add_shipping_costs(self.order, self.shipping_label,
-            self.shipping_value)
+        api.add_shipping_costs(self.order, self.shipping_label, self.shipping_value)
+        api.add_shipping_costs(self.order, self.shipping_label, self.shipping_value)
 
         self.assertEqual(self.order.shipping_costs, self.shipping_value)
-        self.assertEqual(self.order.order_total, (self.order.order_subtotal +
-            self.shipping_value))
+        self.assertEqual(
+            self.order.order_total, (self.order.order_subtotal + self.shipping_value)
+        )
 
 
 class FlatRateShippingTestCase(TestCase):
     """Tests for ``shop.shipping.backends.flat_rate.FlatRateShipping``."""
+
     def setUp(self):
         self.backend = FlatRateShipping(shop=ShippingAPI())
         self.user = User.objects.create(username="test", email="test@example.com")
         self.request = Mock()
-        setattr(self.request, 'user', self.user)
+        setattr(self.request, "user", self.user)
 
     def test_must_be_logged_in_if_setting_is_true(self):
         with SettingsOverride(SHOP_FORCE_LOGIN=True):
-            resp = self.client.get(reverse('flat'))
+            resp = self.client.get(reverse("flat"))
             self.assertEqual(resp.status_code, 302)
-            self.assertTrue('accounts/login/' in resp._headers['location'][1])
-            resp = self.client.get(reverse('flat_process'))
+            self.assertTrue("accounts/login/" in resp._headers["location"][1])
+            resp = self.client.get(reverse("flat_process"))
             self.assertEqual(resp.status_code, 302)
-            self.assertTrue('accounts/login/' in resp._headers['location'][1])
+            self.assertTrue("accounts/login/" in resp._headers["location"][1])
 
     def test_order_required_before_shipping_processed(self):
-        """ See issue #84 """
+        """See issue #84"""
         # Session only (no order)
-        response = self.client.get(reverse('flat_process'))
+        response = self.client.get(reverse("flat_process"))
         self.assertEqual(response.status_code, 302)
 
         # User logged in (no order)
         view = self.backend.view_process_order(self.request)
-        self.assertEqual(view.get('location', None), '/shop/cart/')
+        self.assertEqual(view.get("location", None), "/shop/cart/")
 
         # User logged in with order
         order = Order()
-        setattr(order, 'user', self.user)
+        setattr(order, "user", self.user)
         order.save()
         view = self.backend.view_process_order(self.request)
-        self.assertEqual(view.get('location', None), reverse('checkout_confirm'))
+        self.assertEqual(view.get("location", None), reverse("checkout_confirm"))

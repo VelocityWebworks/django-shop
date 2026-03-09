@@ -2,10 +2,9 @@
 from decimal import Decimal
 
 from django.conf import settings
-from django.conf.urls import url
-from django.shortcuts import render_to_response
-from django.template import RequestContext
-from django.utils.translation import ugettext_lazy as _
+from django.shortcuts import render
+from django.urls import re_path
+from django.utils.translation import gettext_lazy as _
 
 from shop.util.decorators import on_method, shop_login_required, order_required
 
@@ -49,17 +48,15 @@ class FlatRateShipping(object):
         A simple, normal view that displays a template showing how much the
         shipping will be (it's an example, alright)
         """
-        ctx = {}
-        ctx.update({'shipping_costs': Decimal(self.rate)})
-        return render_to_response('shop/shipping/flat_rate/display_fees.html',
-            ctx, context_instance=RequestContext(request))
+        ctx = {'shipping_costs': Decimal(self.rate)}
+        return render(request, 'shop/shipping/flat_rate/display_fees.html', ctx)
 
     def get_urls(self):
         """
         Return the list of URLs defined here.
         """
         urlpatterns = [
-            url(r'^$', self.view_display_fees, name='flat'),
-            url(r'^process/$', self.view_process_order, name='flat_process'),
+            re_path(r'^$', self.view_display_fees, name='flat'),
+            re_path(r'^process/$', self.view_process_order, name='flat_process'),
         ]
         return urlpatterns

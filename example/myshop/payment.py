@@ -1,8 +1,7 @@
-from django.conf.urls import url
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response
-from django.template import RequestContext
-from django.utils.translation import ugettext_lazy as _
+from django.shortcuts import render
+from django.urls import re_path
+from django.utils.translation import gettext_lazy as _
 from shop.util.decorators import on_method, shop_login_required, order_required
 
 
@@ -25,7 +24,7 @@ class ExamplePayment(object):
         ctx = {
             'order': the_order,
         }
-        return render_to_response(self.template, ctx, context_instance=RequestContext(request))
+        return render(request, self.template, ctx)
 
     @on_method(shop_login_required)
     @on_method(order_required)
@@ -38,7 +37,7 @@ class ExamplePayment(object):
 
     def get_urls(self):
         urlpatterns = [
-            url(r'^$', self.show_payment, name='example-payment'),
-            url(r'^$', self.process_payment, name='process-payment'),
+            re_path(r'^$', self.show_payment, name='example-payment'),
+            re_path(r'^process/$', self.process_payment, name='process-payment'),
         ]
         return urlpatterns

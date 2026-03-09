@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 from decimal import Decimal
-from distutils.version import LooseVersion
 
-import django
 from django.conf import settings
 from django.db import models
 from django.db.models.aggregates import Sum
 from django.urls import reverse
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from polymorphic.models import PolymorphicModel
 
 from shop.cart.modifiers_pool import cart_modifiers_pool
@@ -43,7 +41,7 @@ class BaseProduct(PolymorphicModel):
         verbose_name = _('Product')
         verbose_name_plural = _('Products')
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def get_absolute_url(self):
@@ -369,7 +367,7 @@ class BaseOrder(models.Model):
         verbose_name = _('Order')
         verbose_name_plural = _('Orders')
 
-    def __unicode__(self):
+    def __str__(self):
         return _('Order ID: %(id)s') % {'id': self.pk}
 
     def get_absolute_url(self):
@@ -443,13 +441,6 @@ class BaseOrder(models.Model):
             self.save()
 
 
-# We need some magic to support django < 1.3 that has no support
-# models.on_delete option
-f_kwargs = {}
-if LooseVersion(django.get_version()) >= LooseVersion('1.3'):
-    f_kwargs['on_delete'] = models.SET_NULL
-
-
 class BaseOrderItem(models.Model):
     """
     A line Item for an order.
@@ -458,7 +449,7 @@ class BaseOrderItem(models.Model):
     order = models.ForeignKey(get_model_string('Order'), related_name='items', verbose_name=_('Order'), on_delete=models.CASCADE)
     product_reference = models.CharField(max_length=255, verbose_name=_('Product reference'))
     product_name = models.CharField(max_length=255, null=True, blank=True, verbose_name=_('Product name'))
-    product = models.ForeignKey(get_model_string('Product'), verbose_name=_('Product'), null=True, blank=True, **f_kwargs)
+    product = models.ForeignKey(get_model_string('Product'), verbose_name=_('Product'), null=True, blank=True, on_delete=models.SET_NULL)
     unit_price = CurrencyField(verbose_name=_('Unit price'))
     quantity = models.IntegerField(verbose_name=_('Quantity'))
     line_subtotal = CurrencyField(verbose_name=_('Line subtotal'))

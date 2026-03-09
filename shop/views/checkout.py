@@ -2,34 +2,34 @@
 """
 This models the checkout process using views.
 """
-from django.core.urlresolvers import reverse
 from django.forms import models as model_forms
 from django.http import HttpResponseRedirect
+from django.urls import reverse
 from django.views.generic import RedirectView
 
 from shop.forms import BillingShippingForm
-from shop.models import AddressModel, OrderExtraInfo
-from shop.models import Order
+from shop.models import AddressModel, Order, OrderExtraInfo
 from shop.util.address import (
     assign_address_to_request,
     get_billing_address_from_request,
     get_shipping_address_from_request,
 )
 from shop.util.cart import get_or_create_cart
+from shop.util.login_mixin import LoginMixin
 from shop.util.order import add_order_to_request, get_order_from_request
 from shop.views import ShopTemplateView, ShopView
-from shop.util.login_mixin import LoginMixin
 
 
 class CheckoutSelectionView(LoginMixin, ShopTemplateView):
-    template_name = 'shop/checkout/selection.html'
+    template_name = "shop/checkout/selection.html"
 
     def _get_dynamic_form_class_from_factory(self):
         """
         Returns a dynamic ModelForm from the loaded AddressModel
         """
         form_class = model_forms.modelform_factory(
-            AddressModel, exclude=['user_shipping', 'user_billing'])
+            AddressModel, exclude=["user_shipping", "user_billing"]
+        )
         return form_class
 
     def get_shipping_form_class(self):
@@ -72,7 +72,7 @@ class CheckoutSelectionView(LoginMixin, ShopTemplateView):
         any other form instead.
         """
         # Try to get the cached version first.
-        form = getattr(self, '_shipping_form', None)
+        form = getattr(self, "_shipping_form", None)
         if not form:
             # Create a dynamic Form class for the model specified as the
             # address model
@@ -82,8 +82,9 @@ class CheckoutSelectionView(LoginMixin, ShopTemplateView):
             # session))
             shipping_address = get_shipping_address_from_request(self.request)
             if self.request.method == "POST":
-                form = form_class(self.request.POST, prefix="ship",
-                    instance=shipping_address)
+                form = form_class(
+                    self.request.POST, prefix="ship", instance=shipping_address
+                )
             else:
                 # We should either have an instance, or None
                 if not shipping_address:
@@ -94,7 +95,7 @@ class CheckoutSelectionView(LoginMixin, ShopTemplateView):
 
                 # Instanciate the form
                 form = form_class(instance=shipping_address, prefix="ship")
-            setattr(self, '_shipping_form', form)
+            setattr(self, "_shipping_form", form)
         return form
 
     def get_billing_address_form(self):
@@ -104,7 +105,7 @@ class CheckoutSelectionView(LoginMixin, ShopTemplateView):
         ``settings.SHOP_ADDRESS_MODEL``.
         """
         # Try to get the cached version first.
-        form = getattr(self, '_billing_form', None)
+        form = getattr(self, "_billing_form", None)
         if not form:
             # Create a dynamic Form class for the model specified as the
             # address model
@@ -114,8 +115,9 @@ class CheckoutSelectionView(LoginMixin, ShopTemplateView):
             # session))
             billing_address = get_billing_address_from_request(self.request)
             if self.request.method == "POST":
-                form = form_class(self.request.POST, prefix="bill",
-                    instance=billing_address)
+                form = form_class(
+                    self.request.POST, prefix="bill", instance=billing_address
+                )
             else:
                 # We should either have an instance, or None
                 if not billing_address:
@@ -124,26 +126,25 @@ class CheckoutSelectionView(LoginMixin, ShopTemplateView):
                     # default value for the form.
                     billing_address = AddressModel()
 
-                #Instanciate the form
+                # Instanciate the form
                 form = form_class(instance=billing_address, prefix="bill")
-            setattr(self, '_billing_form', form)
+            setattr(self, "_billing_form", form)
         return form
 
     def get_billing_and_shipping_selection_form(self):
         """
         Get (and cache) the BillingShippingForm instance
         """
-        form = getattr(self, '_billingshipping_form', None)
+        form = getattr(self, "_billingshipping_form", None)
         if not form:
-            if self.request.method == 'POST':
+            if self.request.method == "POST":
                 form = BillingShippingForm(self.request.POST)
             else:
                 form = BillingShippingForm()
             self._billingshipping_form = form
         return form
 
-    def save_addresses_to_order(self, order, shipping_address,
-                                billing_address):
+    def save_addresses_to_order(self, order, shipping_address, billing_address):
         """
         Provided for extensibility.
 
@@ -159,59 +160,63 @@ class CheckoutSelectionView(LoginMixin, ShopTemplateView):
         Initializes and handles the form for order extra info.
         """
         # Try to get the cached version first.
-        form = getattr(self, '_extra_info_form', None)
+        form = getattr(self, "_extra_info_form", None)
         if not form:
             # Create a dynamic Form class for the model
-            form_class = model_forms.modelform_factory(OrderExtraInfo, exclude=['order'])
-            if self.request.method == 'POST':
+            form_class = model_forms.modelform_factory(
+                OrderExtraInfo, exclude=["order"]
+            )
+            if self.request.method == "POST":
                 form = form_class(self.request.POST)
             else:
                 form = form_class()
-            setattr(self, '_extra_info_form', form)
+            setattr(self, "_extra_info_form", form)
         return form
 
     def save_extra_info_to_order(self, order, form):
-        if form.cleaned_data.get('text'):
+        if form.cleaned_data.get("text"):
             extra_info = form.save(commit=False)
             extra_info.order = order
             extra_info.save()
 
     def post(self, *args, **kwargs):
-        """ Called when view is POSTed """
+        """Called when view is POSTed"""
         shipping_form = self.get_shipping_address_form()
         billing_form = self.get_billing_address_form()
         extra_info_form = self.get_extra_info_form()
-        if shipping_form.is_valid() and billing_form.is_valid() and extra_info_form.is_valid():
+        if (
+            shipping_form.is_valid()
+            and billing_form.is_valid()
+            and extra_info_form.is_valid()
+        ):
 
             # Add the address to the order
             shipping_address = shipping_form.save()
             billing_address = billing_form.save()
             order = self.create_order_object_from_cart()
 
-            self.save_addresses_to_order(order, shipping_address,
-                billing_address)
+            self.save_addresses_to_order(order, shipping_address, billing_address)
 
             # The following marks addresses as being default addresses for
             # shipping and billing. For more options (amazon style), we should
             # remove this
-            assign_address_to_request(self.request, shipping_address,
-                shipping=True)
-            assign_address_to_request(self.request, billing_address,
-                shipping=False)
+            assign_address_to_request(self.request, shipping_address, shipping=True)
+            assign_address_to_request(self.request, billing_address, shipping=False)
 
-            billingshipping_form = \
-                self.get_billing_and_shipping_selection_form()
+            billingshipping_form = self.get_billing_and_shipping_selection_form()
             if billingshipping_form.is_valid():
                 # save selected billing and shipping methods
-                self.request.session['payment_backend'] = \
-                    billingshipping_form.cleaned_data['payment_method']
-                self.request.session['shipping_backend'] = \
-                    billingshipping_form.cleaned_data['shipping_method']
+                self.request.session["payment_backend"] = (
+                    billingshipping_form.cleaned_data["payment_method"]
+                )
+                self.request.session["shipping_backend"] = (
+                    billingshipping_form.cleaned_data["shipping_method"]
+                )
 
                 # add extra info to order
                 self.save_extra_info_to_order(order, extra_info_form)
 
-                return HttpResponseRedirect(reverse('checkout_shipping'))
+                return HttpResponseRedirect(reverse("checkout_shipping"))
 
         return self.get(self, *args, **kwargs)
 
@@ -225,17 +230,19 @@ class CheckoutSelectionView(LoginMixin, ShopTemplateView):
         billing_address_form = self.get_billing_address_form()
         billingshipping_form = self.get_billing_and_shipping_selection_form()
         extra_info_form = self.get_extra_info_form()
-        ctx.update({
-            'shipping_address': shipping_address_form,
-            'billing_address': billing_address_form,
-            'billing_shipping_form': billingshipping_form,
-            'extra_info_form': extra_info_form,
-        })
+        ctx.update(
+            {
+                "shipping_address": shipping_address_form,
+                "billing_address": billing_address_form,
+                "billing_shipping_form": billingshipping_form,
+                "extra_info_form": extra_info_form,
+            }
+        )
         return ctx
 
 
 class OrderConfirmView(RedirectView):
-    url_name = 'checkout_payment'
+    url_name = "checkout_payment"
     permanent = False
 
     def confirm_order(self):
@@ -251,8 +258,9 @@ class OrderConfirmView(RedirectView):
         self.url = reverse(self.url_name)
         return super(OrderConfirmView, self).get_redirect_url(**kwargs)
 
+
 class ThankYouView(LoginMixin, ShopTemplateView):
-    template_name = 'shop/checkout/thank_you.html'
+    template_name = "shop/checkout/thank_you.html"
 
     def get_context_data(self, **kwargs):
         ctx = super(ShopTemplateView, self).get_context_data(**kwargs)
@@ -260,7 +268,11 @@ class ThankYouView(LoginMixin, ShopTemplateView):
         # put the latest order in the context only if it is completed
         order = get_order_from_request(self.request)
         if order and order.status == Order.COMPLETED:
-            ctx.update({'order': order, })
+            ctx.update(
+                {
+                    "order": order,
+                }
+            )
 
         return ctx
 
@@ -268,16 +280,16 @@ class ThankYouView(LoginMixin, ShopTemplateView):
 class ShippingBackendRedirectView(LoginMixin, ShopView):
     def get(self, *args, **kwargs):
         try:
-            backend_namespace = self.request.session.pop('shipping_backend')
+            backend_namespace = self.request.session.pop("shipping_backend")
             return HttpResponseRedirect(reverse(backend_namespace))
         except KeyError:
-            return HttpResponseRedirect(reverse('cart'))
+            return HttpResponseRedirect(reverse("cart"))
 
 
 class PaymentBackendRedirectView(LoginMixin, ShopView):
     def get(self, *args, **kwargs):
         try:
-            backend_namespace = self.request.session.pop('payment_backend')
+            backend_namespace = self.request.session.pop("payment_backend")
             return HttpResponseRedirect(reverse(backend_namespace))
         except KeyError:
-            return HttpResponseRedirect(reverse('cart'))
+            return HttpResponseRedirect(reverse("cart"))

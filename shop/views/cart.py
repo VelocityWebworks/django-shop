@@ -2,10 +2,14 @@
 import json
 
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import transaction
-from django.http import (Http404, HttpResponse, HttpResponseBadRequest,
-                         HttpResponseRedirect)
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseRedirect,
+)
 from django.shortcuts import redirect
 
 from shop.forms import get_cart_item_formset
@@ -21,6 +25,7 @@ class CartItemDetail(ShopView):
     the sense that it is not designed to answer to GET or POST request nor to
     display anything, but only to be used from AJAX.
     """
+
     action = None
 
     def dispatch(self, request, *args, **kwargs):
@@ -29,8 +34,7 @@ class CartItemDetail(ShopView):
         If `action` is defined use it dispatch request to the right method.
         """
         if not self.action:
-            return super(CartItemDetail, self).dispatch(request, *args,
-                **kwargs)
+            return super(CartItemDetail, self).dispatch(request, *args, **kwargs)
         if self.action in self.http_method_names:
             handler = getattr(self, self.action, self.http_method_not_allowed)
         else:
@@ -49,13 +53,13 @@ class CartItemDetail(ShopView):
         http://example.com/shop/cart/item/12345
         """
         cart_object = get_or_create_cart(self.request)
-        item_id = self.kwargs.get('id')
+        item_id = self.kwargs.get("id")
         # NOTE: it seems logic to be in POST but as tests client shows
         # with PUT request, data is in GET variable
         # TODO: test in real client
         # quantity = self.request.POST['item_quantity']
         try:
-            quantity = int(self.request.POST['item_quantity'])
+            quantity = int(self.request.POST["item_quantity"])
         except (KeyError, ValueError):
             return HttpResponseBadRequest("The quantity has to be a number")
         try:
@@ -74,7 +78,7 @@ class CartItemDetail(ShopView):
         with transaction.atomic():
             cart_object = get_or_create_cart(self.request)
 
-            item_id = self.kwargs.get('id')
+            item_id = self.kwargs.get("id")
             try:
                 Cart.objects.select_for_update().get(pk=cart_object.pk)
                 cart_object.delete_item(item_id)
@@ -89,27 +93,28 @@ class CartItemDetail(ShopView):
         Generic hook by default redirects to cart
         """
         if self.request.is_ajax():
-            data = {
-                "status": "success"
-            }
+            data = {"status": "success"}
             if cart_object:
                 cart_object.update(self.request)
                 items = cart_object.get_updated_cart_items()
                 data.update(
                     cart={
-                        "items": [{
-                            "pk": cart_item.pk,
-                            "line_subtotal": str(cart_item.line_subtotal),
-                            "line_total": str(cart_item.line_total)
-                        } for cart_item in items],
+                        "items": [
+                            {
+                                "pk": cart_item.pk,
+                                "line_subtotal": str(cart_item.line_subtotal),
+                                "line_total": str(cart_item.line_total),
+                            }
+                            for cart_item in items
+                        ],
                         "count": sum([cart_item.quantity for cart_item in items]),
                         "subtotal_price": str(cart_object.subtotal_price),
-                        "total_price": str(cart_object.total_price)
+                        "total_price": str(cart_object.total_price),
                     }
                 )
             return HttpResponse(json.dumps(data), content_type="application/json")
         else:
-            return HttpResponseRedirect(reverse('cart'))
+            return HttpResponseRedirect(reverse("cart"))
 
     def post_success(self, product, cart_item, cart_object=None):
         """
@@ -138,15 +143,15 @@ class CartDetails(ShopTemplateResponseMixin, CartItemDetail):
     a normal view (and returns HTML that people can actually see)
     """
 
-    template_name = 'shop/cart.html'
+    template_name = "shop/cart.html"
     action = None
 
     def get_context_data(self, **kwargs):
         # There is no get_context_data on super(), we inherit from the mixin!
         ctx = kwargs  # receive params from subclasses
         self.cart.update(self.request)
-        ctx.update({'cart': self.cart})
-        ctx.update({'cart_items': self.cart.get_updated_cart_items()})
+        ctx.update({"cart": self.cart})
+        ctx.update({"cart_items": self.cart.get_updated_cart_items()})
         return ctx
 
     def get(self, request, *args, **kwargs):
@@ -156,8 +161,12 @@ class CartDetails(ShopTemplateResponseMixin, CartItemDetail):
         """
         self.cart = get_or_create_cart(self.request)
         context = self.get_context_data(**kwargs)
-        formset = get_cart_item_formset(cart_items=context['cart_items'])
-        context.update({'formset': formset, })
+        formset = get_cart_item_formset(cart_items=context["cart_items"])
+        context.update(
+            {
+                "formset": formset,
+            }
+        )
         return self.render_to_response(context)
 
     def post(self, *args, **kwargs):
@@ -167,8 +176,8 @@ class CartDetails(ShopTemplateResponseMixin, CartItemDetail):
         (defaults to 1)
         """
         try:
-            product_id = int(self.request.POST['add_item_id'])
-            product_quantity = int(self.request.POST.get('add_item_quantity', 1))
+            product_id = int(self.request.POST["add_item_id"])
+            product_quantity = int(self.request.POST.get("add_item_quantity", 1))
         except (KeyError, ValueError):
             return HttpResponseBadRequest("The quantity and ID have to be numbers")
         product = Product.objects.get(pk=product_id)
@@ -194,12 +203,17 @@ class CartDetails(ShopTemplateResponseMixin, CartItemDetail):
         """
         context = self.get_context_data(**kwargs)
         try:
-            formset = get_cart_item_formset(cart_items=context['cart_items'],
-                    data=self.request.POST)
+            formset = get_cart_item_formset(
+                cart_items=context["cart_items"], data=self.request.POST
+            )
         except ValidationError:
-            return redirect('cart')
+            return redirect("cart")
         if formset.is_valid():
             formset.save()
             return self.put_success()
-        context.update({'formset': formset, })
+        context.update(
+            {
+                "formset": formset,
+            }
+        )
         return self.render_to_response(context)

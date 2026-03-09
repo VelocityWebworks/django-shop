@@ -3,23 +3,23 @@ import django.dispatch
 # Order-related signals
 
 """Emitted when fetching the Cart from the database"""
-fetching = django.dispatch.Signal(providing_args=['request', 'filters'])
+fetching = django.dispatch.Signal()
 
 """Emitted when the Cart was converted to an Order"""
-processing = django.dispatch.Signal(providing_args=['order', 'cart'])
+processing = django.dispatch.Signal()
 
 """Emitted when the user is shown the "select a payment method" page """
-payment_selection = django.dispatch.Signal(providing_args=['order'])
+payment_selection = django.dispatch.Signal()
 
 """Emitted when the user finished placing his order (regardless of the payment
 success or failure)"""
-confirmed = django.dispatch.Signal(providing_args=['order'])
+confirmed = django.dispatch.Signal()
 
 """Emitted when the payment was received for the Order"""
-completed = django.dispatch.Signal(providing_args=['order'])
+completed = django.dispatch.Signal()
 
 """Emitted if the payment was refused or other fatal problem"""
-cancelled = django.dispatch.Signal(providing_args=['order'])
+cancelled = django.dispatch.Signal()
 
 """Emitted (manually) when the shop clerk or robot shipped the order"""
-shipped = django.dispatch.Signal(providing_args=['order'])
+shipped = django.dispatch.Signal()

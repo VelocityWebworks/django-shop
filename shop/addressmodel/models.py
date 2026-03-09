@@ -4,9 +4,7 @@ Holds all the information relevant to the client (addresses for instance)
 """
 from django.conf import settings
 from django.db import models
-from django.utils.translation import ugettext_lazy as _
-
-from django.conf import settings
+from django.utils.translation import gettext_lazy as _
 
 BASE_ADDRESS_TEMPLATE = \
 _("""
@@ -25,8 +23,8 @@ USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 class Country(models.Model):
     name = models.CharField(max_length=255)
 
-    def __unicode__(self):
-        return u'%s' % self.name
+    def __str__(self):
+        return '%s' % self.name
 
     class Meta(object):
         verbose_name = _('Country')
@@ -35,9 +33,9 @@ class Country(models.Model):
 
 class Address(models.Model):
     user_shipping = models.OneToOneField(USER_MODEL, related_name='shipping_address',
-                                         blank=True, null=True)
+                                         blank=True, null=True, on_delete=models.SET_NULL)
     user_billing = models.OneToOneField(USER_MODEL, related_name='billing_address',
-                                        blank=True, null=True)
+                                        blank=True, null=True, on_delete=models.SET_NULL)
 
     name = models.CharField(_('Name'), max_length=255)
     address = models.CharField(_('Address'), max_length=255)
@@ -46,13 +44,13 @@ class Address(models.Model):
     city = models.CharField(_('City'), max_length=20)
     state = models.CharField(_('State'), max_length=255)
     country = models.ForeignKey(Country, verbose_name=_('Country'), blank=True,
-                                null=True)
+                                null=True, on_delete=models.SET_NULL)
 
     class Meta(object):
         verbose_name = _('Address')
         verbose_name_plural = _("Addresses")
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s (%s, %s)' % (self.name, self.zip_code, self.city)
 
     def clone(self):

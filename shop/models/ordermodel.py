@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
-from distutils.version import LooseVersion
 from django.conf import settings
 from django.db import models
-from django.db.models.signals import pre_delete
-from django.utils.translation import ugettext_lazy as _
-from shop.models.productmodel import Product
+from django.utils.translation import gettext_lazy as _
 from shop.util.fields import CurrencyField
 from shop.util.loader import load_class
-import django
 
 
 #==============================================================================
@@ -25,16 +21,6 @@ Order = load_class(ORDER_MODEL, 'SHOP_ORDER_MODEL')
 ORDERITEM_MODEL = getattr(settings, 'SHOP_ORDERITEM_MODEL',
     'shop.models.defaults.orderitem.OrderItem')
 OrderItem = load_class(ORDERITEM_MODEL, 'SHOP_ORDERITEM_MODEL')
-
-
-# Now we clear refrence to product from every OrderItem
-def clear_products(sender, instance, using, **kwargs):
-    for oi in OrderItem.objects.filter(product=instance):
-        oi.product = None
-        oi.save()
-
-if LooseVersion(django.get_version()) < LooseVersion('1.3'):
-    pre_delete.connect(clear_products, sender=Product)
 
 
 class OrderExtraInfo(models.Model):

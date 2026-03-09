@@ -1,16 +1,15 @@
-from django.conf.urls import url
+from django.urls import re_path
 from shop.views.order import OrderListView, OrderDetailView
 
 urlpatterns = [
-    url(
+    re_path(
         r'^$',
         OrderListView.as_view(),
         name='order_list'
     ),
-    url(
+    re_path(
         r'^(?P<pk>\d+)/$',
         OrderDetailView.as_view(),
         name='order_detail'
     ),
 ]
-

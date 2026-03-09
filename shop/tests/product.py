@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 from decimal import Decimal
-from shop.models.productmodel import Product
-from shop.models.ordermodel import Order, OrderItem
+
 from django.test.testcases import TestCase
+
+from shop.models.ordermodel import Order, OrderItem
+from shop.models.productmodel import Product
 
 
 class ProductTestCase(TestCase):
 
     def setUp(self):
         self.product = Product()
-        self.product.name = 'test'
-        self.product.unit_price = Decimal('1.0')
+        self.product.name = "test"
+        self.product.unit_price = Decimal("1.0")
         self.product.save()
 
     def test_unicode_returns_proper_stuff(self):
-        ret = self.product.__unicode__()
+        ret = self.product.__str__()
         self.assertEqual(ret, self.product.name)
 
     def test_active_filter_returns_only_active_products(self):
@@ -36,30 +38,30 @@ class ProductStatisticsTestCase(TestCase):
 
     def setUp(self):
         self.product = Product()
-        self.product.name = 'test'
-        self.product.slug = 'test'
-        self.product.unit_price = Decimal('1.0')
+        self.product.name = "test"
+        self.product.slug = "test"
+        self.product.unit_price = Decimal("1.0")
         self.product.save()
 
         self.product2 = Product()
-        self.product2.name = 'test2'
-        self.product2.slug = 'test2'
-        self.product2.unit_price = Decimal('1.0')
+        self.product2.name = "test2"
+        self.product2.slug = "test2"
+        self.product2.unit_price = Decimal("1.0")
         self.product2.save()
 
         self.product3 = Product()
-        self.product3.name = 'test3'
-        self.product3.slug = 'test3'
-        self.product3.unit_price = Decimal('1.0')
+        self.product3.name = "test3"
+        self.product3.slug = "test3"
+        self.product3.unit_price = Decimal("1.0")
         self.product3.save()
 
         self.order = Order()
-        self.order.order_subtotal = Decimal('10')
-        self.order.order_total = Decimal('10')
-        self.order.shipping_cost = Decimal('0')
+        self.order.order_subtotal = Decimal("10")
+        self.order.order_total = Decimal("10")
+        self.order.shipping_cost = Decimal("0")
 
-        self.order.shipping_address_text = 'shipping address example'
-        self.order.billing_address_text = 'billing address example'
+        self.order.shipping_address_text = "shipping address example"
+        self.order.billing_address_text = "billing address example"
         self.order.save()
 
         self.orderitem1 = OrderItem()

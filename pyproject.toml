@@ -1,0 +1,43 @@
+[project]
+name = "django-shop"
+version = "0.2.10"
+description = "An Advanced Django Shop"
+readme = "README.rst"
+license = { text = "BSD License" }
+authors = [
+    { name = "Christopher Glass", email = "tribaal@gmail.com" },
+]
+classifiers = [
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Framework :: Django :: 5.2",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "Django>=5.2",
+    "django-polymorphic>=3.0",
+]
+
+[project.urls]
+Homepage = "http://www.django-shop.org/"
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-django",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "testapp.settings"
+pythonpath = ["tests"]
+testpaths = ["shop/tests"]

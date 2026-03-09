@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from django.conf.urls import patterns, url
 from django.http import HttpResponseRedirect
-from django.utils.translation import ugettext_lazy as _
+from django.urls import re_path
+from django.utils.translation import gettext_lazy as _
 from shop.util.decorators import on_method, shop_login_required, order_required
 
 
@@ -36,6 +36,6 @@ class PayOnDeliveryBackend(object):
 
     def get_urls(self):
         urlpatterns = [
-            url(r'^$', self.simple_view, name='pay-on-delivery'),
+            re_path(r'^$', self.simple_view, name='pay-on-delivery'),
         ]
         return urlpatterns

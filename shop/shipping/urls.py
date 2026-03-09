@@ -6,7 +6,7 @@ http://www.example.com/shop/ship/dhl
 http://www.example.com/shop/ship/fedex
 ...
 """
-from django.conf.urls import include
+from django.urls import include, re_path
 from shop.backends_pool import backends_pool
 
 
@@ -16,6 +16,6 @@ for backend in backends_pool.get_shipping_backends_list():
     regexp = "^%s/" % backend.url_namespace
     urls = backend.get_urls()
     pattern = [
-        (regexp, include(backend.get_urls()))
+        re_path(regexp, include(backend.get_urls()))
     ]
     urlpatterns = pattern + urlpatterns
