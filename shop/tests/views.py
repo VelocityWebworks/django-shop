@@ -112,7 +112,7 @@ class CartDetailsViewTestCase(TestCase):
         self.cart.save()
 
         request = Mock()
-        setattr(request, "is_ajax", lambda: False)
+        setattr(request, "headers", {})
         setattr(request, "user", self.user)
         setattr(request, "session", {})
         post = {
@@ -137,7 +137,7 @@ class CartDetailsViewTestCase(TestCase):
         self.cart.save()
 
         request = Mock()
-        setattr(request, "is_ajax", lambda: True)
+        setattr(request, "headers", {"x-requested-with": "XMLHttpRequest"})
         setattr(request, "user", self.user)
         setattr(request, "session", {})
         post = {

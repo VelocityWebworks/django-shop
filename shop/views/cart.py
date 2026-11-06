@@ -92,7 +92,7 @@ class CartItemDetail(ShopView):
         """
         Generic hook by default redirects to cart
         """
-        if self.request.is_ajax():
+        if self.request.headers.get("x-requested-with") == "XMLHttpRequest":
             data = {"status": "success"}
             if cart_object:
                 cart_object.update(self.request)
